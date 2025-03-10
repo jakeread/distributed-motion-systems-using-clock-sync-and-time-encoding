@@ -2,6 +2,8 @@
 
 > Originally published to https://github.com/jakeread/distributed-motion-systems-using-clock-sync-and-time-encoding on March 10th, 2025  
 
+> I hereby dedicate the contents of this disclosure to the public domain so that it may serve as prior art.  
+
 Building control systems for mechatronic systems is an ongoing challenge for roboticists and machine builders. A particular challenge is the development of systems that span multiple computing devices: typically these systems involve one or more "laptop-scale" computers (i.e. with GHz of clock and GBs of memory, and normally running an OS - we will call them "big" devices for short), and one or more "embedded" scale devices (i.e. with MHz of clock and MBs or KBs of memory - "small" devices). Systems that span big- and small computing are common especially in manufacturing, where the orchestration of manufacturing tasks (i.e. computer aided manufacturing - CAM) require big computing, but the execution of tasks (i.e. controlling an actuator's position) requires small computing (which is deterministic, reliable, and safe). 
 
 The problems presented by these systems have mostly to do with time, since any network that connects them is bound to have some message-passing delay - and all networks have some amount of delay 'jitter,' - these both make synchronous control difficult if we simply use 'instantaneous' operation: i.e. executing a new command as soon as it is received means that if we transmit a command to another device, we can never be exactly sure when it will be executed. Similarely, if we poll a sensor in a system, we cannot be sure when the measurement was actually performed. 
@@ -96,9 +98,9 @@ All networked systems exhibit some delay, whose inevitability poses real challen
 
 Control of these systems naturally requires operation at multiple time scales: high-level planning algorithms like model predictive control (MPC) and policy controllers may operate at relatively low frequencies (hundreds of Hz) but require large compute capabilities, where lower level controllers (like those responsible for setting coil current in a motor) may operate at tens of kHz, but require only very little computing. The system described here is effectively a partitioning system that allows us to distribute various parts of the controller onto the appropriate computing devices, while maintaining order of the system as a whole. 
 
-For these systems, clock synchronization is a key enabler, and the various time-based encodings discussed here are useful tools to distribute task descriptions and coordinate data ingestion. Using synchronous clocks and these data streams, we can negate most of the effects of clock jitter by giving ourselves a tool with which to schedule motion on short time spans, while transmitting data on longer time spans where delays are not problematic. 
+For these systems, clock synchronization is a key enabler, and the various time-based encodings discussed here are useful tools to distribute task descriptions and coordinate data ingestion. Using synchronous clocks and these data streams, we can negate most of the effects of clock jitter by giving ourselves a tool with which to schedule motion on short time spans, while transmitting data on longer time spans where delays are not problematic. The basic advantage of this system is to cleanly buffer control data at a systems scale (and recover measurements in a meaningful way): once parameters are transmitted, recipients can faithfully carry out plans even if network jitter is present. 
 
-These solutions do not negate the desire for high bandwidth, instead they isolate us from the need for extremely low jitter and highly deterministic networks, which are costly to build and maintain and difficult to debug. 
+These solutions do not negate the desire for high bandwidth, but they isolate us from the need for extremely low jitter and highly deterministic networks, which are costly to build and maintain and difficult to debug. 
 
 ## Measuring Clock Synchronization
 
@@ -112,7 +114,7 @@ In this system, segments of time encoded trajectories that are missed can (1) be
 
 ## State of Development 
 
-I have been actively developing this system and use it regularely in research on machine control. Components include a networking library written in python and c++, a motion controller written in python and spline evaluators in c++, as well as event track and linear track readers also in c++. Source code and designs for circuits are presently stored and date-stamped in private repositories in the [Center for Bits and Atoms GitLab](https://gitlab.cba.mit.edu/) and will be made available when it is appropriate. 
+I have been actively developing this system and use it regularely in research on machine control. Components include a networking library written in python and c++, a motion controller written in python and spline evaluators in c++, as well as event track and linear track readers also in c++. I have demonstrated timestamped sensor readings and used them to develop physically accurate models of systems. Source code and designs for circuits are presently stored and date-stamped in private repositories in the [Center for Bits and Atoms GitLab](https://gitlab.cba.mit.edu/) and will be made available when it is appropriate. 
 
 ## Enumerations of Adaptations 
 
@@ -132,4 +134,3 @@ For discussion on clock synchronization algorithms, see
 > Eidson, John C, Mike Fischer, and Joe White. 2002. “IEEE-1588™ Standard for a Precision Clock Synchronization Protocol for Networked Measurement and Control Systems.” In Proceedings of the 34th Annual Precise Time and Time Interval Systems and Applications Meeting, 243–54. 
 
 > Kopetz, Hermann, and Wilhelm Ochsenreiter. 1987. “Clock Synchronization in Distributed Real-Time Systems.” IEEE Transactions on Computers 100 (8): 933–40.  
-
