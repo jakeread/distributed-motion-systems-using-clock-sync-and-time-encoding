@@ -110,6 +110,10 @@ Networks will always have some amount of indeterminism. Even in highly developed
 
 In this system, segments of time encoded trajectories that are missed can (1) be easily detected by recipients and (2) corrected locally, either with simple interpolations (which are easy to generate on small devices), or with local safety policies, i.e. to minimize energy of the locally controlled system component when other commands are absent. 
 
+## State of Development 
+
+I have been actively developing this system and use it regularely in research on machine control. Components include a networking library written in python and c++, a motion controller written in python and spline evaluators in c++, as well as event track and linear track readers also in c++. Source code and designs for circuits are presently stored and date-stamped in private repositories in the [Center for Bits and Atoms GitLab](https://gitlab.cba.mit.edu/) and will be made available when it is appropriate. 
+
 ## Enumerations of Adaptations 
 
 - Systems containing only "small" devices still benefit from these approaches; although a figure here poses 'track generators' 'above' their consumers, there is no inherent distinction in the system architecture: anyone can produce or consume segments of a series. 
