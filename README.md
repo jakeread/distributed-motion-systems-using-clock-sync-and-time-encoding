@@ -23,7 +23,7 @@ I have developed a very simple, packet-based clock synchronization routine. In t
 - when a `stamp_request` message is received, it is handled by writing the recipients' current clock reading into the packet and returning the packet to the sender as a `stamp_response` 
 - when `stamp_response` messages are subsequently received, the device measures the difference between its own timestamp and the received timestamp, making an offset. it uses half of the round-trip-time for the message as an additional offset, to counteract the network delays' effect on stamp measurement 
 - if any of the received clocks are substantially older than its own, the device shims their clock to match the old clock 
-- otherwise, the device takes **an average of the neighbouring offsets (??)** and applies a shim to their clock to adjust its rate up (if it is behind everyone else) or down (if it is in front), using a remotely controllable tuning variable 
+- otherwise, the device takes an average of the neighbouring offsets and applies a shim to their clock to adjust its rate up (if it is behind everyone else) or down (if it is in front), using a remotely controllable tuning variable 
 - skews are also filtered using another tunable variable, to aid in networks where offset measurement is noisy 
 - all maths are performed using fixed point arithmetic, for speedy implementation even in simple devices without a floating point unit 
 
