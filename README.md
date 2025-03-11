@@ -51,6 +51,61 @@ The most productive encoding that I have used to date is a form of basis spline.
 
 For basis splines, I also pick a fixed interval for each parameter, and I pick an interval that is *some power of two* microseconds, i.e. 512, 1024 ... 16384 us. This last detail means it is easy to evaluate the splines using fixed point arithmetic, again for microcontrollers that may not have a floating point unit (FPU). 
 
+```cpp
+  // collecting p0 ... p3 from the local buffer 
+  fxp32_16_t p0 = stashed_p0;
+  fxp32_16_t p1 = tail->pt;
+  fxp32_16_t p2 = tail->next->pt;
+  fxp32_16_t p3 = tail->next->next->pt;
+
+  // using bitwise arithmetic for within-interval time values, 
+  fxp32_16_t t = (time_now_us - tail->time_us) << (16 - intervalBitWidth);  fxp32_16_t tt = fxp32_16_mult(t, t);
+  fxp32_16_t ttt = fxp32_16_mult(tt, t);
+
+  // calculate a...d params 
+  fxp32_16_t a = fxp32_16_mult(one_sixth, p0) + fxp32_16_mult(two_thirds, p1) + fxp32_16_mult(one_sixth, p2);
+  fxp32_16_t b = - fxp32_16_mult(one_half, p0) + fxp32_16_mult(one_half, p2);
+  fxp32_16_t c = fxp32_16_mult(one_half, p0) - p1 + fxp32_16_mult(one_half, p2);
+  fxp32_16_t d = - fxp32_16_mult(one_sixth, p0) + fxp32_16_mult(one_half, p1) - fxp32_16_mult(one_half, p2) + fxp32_16_mult(one_sixth, p3);
+
+  // add 'em up 
+  fxp32_16_t pos_now = a + fxp32_16_mult(b, t) + fxp32_16_mult(c, tt) + fxp32_16_mult(d, ttt);
+```
+> Above, a code snippet from firmware the evaluates a basis spline using fixed point arithmetic. This could be further improved by calculating `a...d` parameters only at intervals where `p0...p3` roll-over. 
+
+```python
+def get_states_from_spline_pts(p0, p1, p2, p3, t1, t_now, t_interval_length):
+    # time as 0...1 in the interval, 
+    t = (t_now - t1) / t_interval_length
+    # double, triple, 
+    tt = np.power(t, 2) 
+    ttt = np.power(t, 3) 
+    # conform as np 
+    p0 = np.array(p0)
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
+    # params, 
+    a = 1/6 * p0 + 2/3 * p1 + 1/6 * p2 
+    b = - 1/2 * p0 + 1/2 * p2 
+    c = 1/2 * p0 - p1 + 1/2 * p2 
+    d = - 1/6 * p0 + 1/2 * p1 - 1/2 * p2 + 1/6 * p3 
+
+    # now we can get 'em all w/ 
+    pos  = a + b * t + c * tt + d * ttt
+    vel  = (b + c * 2 * t + d * 3 * tt) * (1 / t_interval_length) * 1e6 # (microseconds) 
+    acc  = (c * 2 + d * 6 * t) * (1 / t_interval_length) * 1e12 
+    jerk = (d * 6) * (1 / t_interval_length) * 1e18
+
+    return [
+        pos, 
+        vel, 
+        acc, 
+        jerk
+    ]
+```
+> Above, the equivalent evaluation in python. This shows how we can additionally calculate multiple derivatives of the spline at any given point. 
+
 The basis spline can be used directly as a position variable, which can be used by i.e. stepper motors (who issue steps autonomously such that they track the position) or by servo motors (who use it as a setpoint for a closed-loop controller). Using $f(t)$ also means that servo motors can do some *look ahead* for their control loops, seeing where they will need to be in the future. 
 
 Servos (or any feedback controller) may also track multiple splines, some of which can be used to adjust control loops' internal variables through time. For example, many servo loops use feed-forward terms to compensate for known masses and frictions. In motion systems with nonlinear kinematics, it is optimal to change these feed-forward variables in different configurations. Consider a robot arm: when the arm is extended, gravity's effect on a shoulder motor is greater than when the arm is not extended. In this case, we can use one spline track for the shoulder servo's position setpoint, and a second spline to adjust its feed-forward torque term. This is useful because our servo controllers rarely have a view of the system as a *whole* (whether the arm is extended or not is not a system state typically available to the servo) - but that information can still be made useful to them. 
@@ -134,3 +189,19 @@ For discussion on clock synchronization algorithms, see
 > Eidson, John C, Mike Fischer, and Joe White. 2002. “IEEE-1588™ Standard for a Precision Clock Synchronization Protocol for Networked Measurement and Control Systems.” In Proceedings of the 34th Annual Precise Time and Time Interval Systems and Applications Meeting, 243–54. 
 
 > Kopetz, Hermann, and Wilhelm Ochsenreiter. 1987. “Clock Synchronization in Distributed Real-Time Systems.” IEEE Transactions on Computers 100 (8): 933–40.  
+
+Many others develop modular or flexible control systems architectures for machines:
+
+> Moyer, Ilan Ellison. 2013. “A Gestalt Framework for Virtual Machine Control of Automated Tools.” PhD thesis, Massachusetts Institute of Technology. 
+
+> Peek, Nadya. 2016. “Making Machines That Make: Object-Oriented Hardware Meets Object-Oriented Software.” PhD thesis, Massachusetts Institute of Technology. 
+
+On networked control systems:
+
+> Zhang, Xian-Ming, Qing-Long Han, Xiaohua Ge, Derui Ding, Lei Ding, Dong Yue, and Chen Peng. 2019. “Networked Control Systems: A Survey of Trends and Techniques.” IEEE/CAA Journal of Automatica Sinica 7 (1): 1–17. 
+
+> Zhang, Lixian, Huijun Gao, and Okyay Kaynak. 2012. “Network-Induced Constraints in Networked Control Systems—a Survey.” IEEE Transactions on Industrial Informatics 9 (1): 403–16. 
+
+> Lian, Feng-Li, James Moyne, and Dawn Tilbury. 2002. “Network Design Consideration for Distributed Control Systems.” IEEE Transactions on Control Systems Technology 10 (2): 297–307.  
+
+> Yook, John K, Dawn M Tilbury, and Nandit R Soparkar. 2002. “Trading Computation for Bandwidth: Reducing Communication in Distributed Control Systems Using State Estimators.” IEEE Transactions on Control Systems Technology 10 (4): 503–18.  
