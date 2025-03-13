@@ -2,8 +2,6 @@
 
 > Originally published to https://github.com/jakeread/distributed-motion-systems-using-clock-sync-and-time-encoding on March 10th, 2025  
 
-> Mirrored at https://gitlab.cba.mit.edu/jakeread/distributed-motion-systems-using-clock-sync-and-time-encoding on March 13th, 2025 
-
 > I hereby dedicate the contents of this disclosure to the public domain so that it may serve as prior art.  
 
 Building control systems for mechatronic systems is an ongoing challenge for roboticists and machine builders. A particular challenge is the development of systems that span multiple computing devices: typically these systems involve one or more "laptop-scale" computers (i.e. with GHz of clock and GBs of memory, and normally running an OS - we will call them "big" devices for short), and one or more "embedded" scale devices (i.e. with MHz of clock and MBs or KBs of memory - "small" devices). Systems that span big- and small computing are common especially in manufacturing, where the orchestration of manufacturing tasks (i.e. computer aided manufacturing - CAM) require big computing, but the execution of tasks (i.e. controlling an actuator's position) requires small computing (which is deterministic, reliable, and safe). 
